@@ -103,8 +103,57 @@
   .vf button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#0C0C0C;font-weight:700}
   .it.vide .n{color:var(--accent)}
 </style>
+<style>
+/* 23ms-theme */
+:root{
+    --on-accent:#0C0C0C; --accent:#E8C84A;
+    --soft:#1B1718; --soft:color-mix(in srgb, #E8C84A 12%, #191919);
+}
+:root[data-theme="light"]{
+    --bg:#FAFAF7; --surface:#FFFFFF; --surface2:#F2F2ED; --line:#DFDFD8;
+    --ink:#16161A; --muted:#5F5F5A; --ok:#2F8F62; --on-accent:#FFFFFF;
+    --accent:#8A6E00; --accent-dim:#F7ECEE;
+    --soft:#F4F1EE; --soft:color-mix(in srgb, #8A6E00 10%, #FFFFFF);
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#FAFAF7; --surface:#FFFFFF; --surface2:#F2F2ED; --line:#DFDFD8;
+    --ink:#16161A; --muted:#5F5F5A; --ok:#2F8F62; --on-accent:#FFFFFF;
+    --accent:#8A6E00; --accent-dim:#F7ECEE;
+    --soft:#F4F1EE; --soft:color-mix(in srgb, #8A6E00 10%, #FFFFFF);
+}
+}
+.btn{color:var(--on-accent)}
+.opt:hover{border-color:var(--muted)}
+.opt[aria-pressed="true"]{background:var(--soft)}
+.opt[aria-pressed="true"] .k{color:var(--on-accent)}
+.brow.hot{background:var(--soft)}
+.brow .g i{background:var(--muted)}
+.vf button[aria-pressed="true"]{color:var(--on-accent)}
+.pil[aria-pressed="true"]{color:var(--on-accent)}
+ol.list li.done{background:var(--soft)}
+.band.me{background:var(--soft)}
+.sheet{background:#FFFFFF;border:1px solid var(--line)}
+.top,.bar{background:var(--bg)}
+.theme{position:fixed;right:14px;bottom:14px;z-index:60;appearance:none;cursor:pointer;
+  font-family:inherit;font-size:.78rem;font-weight:700;padding:9px 15px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  box-shadow:0 4px 16px rgba(0,0,0,.22)}
+.theme:hover{border-color:var(--accent);color:var(--accent)}
+@media print{
+  :root{ --bg:#FFFFFF; --surface:#FFFFFF; --surface2:#F4F4F0; --line:#CCCCC6;
+         --ink:#000000; --muted:#434341; --ok:#2F8F62; --on-accent:#FFFFFF;
+         --accent:#8A6E00; --soft:#F3F3EF; }
+  html,body{background:#FFFFFF;color:#000000}
+  .theme,.nav,.top,.bar{display:none}
+  .card,.brow,.grp,.det,.ex{break-inside:avoid}
+}
+</style>
+<script>(function(){try{var t=localStorage.getItem("23ms-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();</script>
 </head>
 <body>
+<button class="theme" id="theme" type="button" aria-label="Changer l'affichage">Clair</button>
+
 <div class="wrap">
 
   <section id="s-intro" class="screen on">
@@ -277,6 +326,39 @@
   $("print").addEventListener("click", function(){ window.print(); });
 })();
 
+</script>
+<script>
+(function(){
+  "use strict";
+  var r = document.documentElement, b = document.getElementById("theme");
+  if(!b) return;
+  function cur(){
+    var a = r.getAttribute("data-theme");
+    if(a === "light" || a === "dark") return a;
+    return (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches)
+      ? "light" : "dark";
+  }
+  function peindre(){
+    var c = cur();
+    b.textContent = (c === "dark") ? "\u2600 Clair" : "\u263E Sombre";
+    b.setAttribute("aria-label", (c === "dark")
+      ? "Passer \u00e0 l'affichage clair" : "Passer \u00e0 l'affichage sombre");
+  }
+  b.addEventListener("click", function(){
+    var n = (cur() === "dark") ? "light" : "dark";
+    r.setAttribute("data-theme", n);
+    try { localStorage.setItem("23ms-theme", n); } catch(e){}
+    peindre();
+  });
+  if(window.matchMedia){
+    try {
+      window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", function(){
+        if(!r.getAttribute("data-theme")) peindre();
+      });
+    } catch(e){}
+  }
+  peindre();
+})();
 </script>
 </body>
 </html>
