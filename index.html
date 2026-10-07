@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autodiagnostic d'assertivité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101010; --surface:#191919; --surface2:#212121; --line:#2E2E2E;
+    --ink:#F4F4F4; --muted:#9A9A9A; --accent:#E8C84A; --ok:#4FBF87; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);
+       font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  body{padding:24px 16px 80px;line-height:1.5}
+  .wrap{max-width:880px;margin:0 auto}
+  .brand{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  h1{font-size:clamp(1.6rem,5.4vw,2.4rem);font-weight:700;letter-spacing:-.02em;line-height:1.12;margin:10px 0 10px}
+  h2{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:30px 0 12px}
+  h3{font-size:1.05rem;font-weight:700;margin:26px 0 10px}
+  .lede{color:var(--muted);max-width:62ch}
+  p+p{margin-top:10px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+  .btn{appearance:none;border:0;border-radius:999px;background:var(--accent);color:#0C0C0C;
+       font-family:inherit;font-size:1rem;font-weight:700;padding:14px 26px;cursor:pointer;transition:.15s}
+  .btn:hover{filter:brightness(1.12)}
+  .btn:disabled{opacity:.35;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .screen{display:none}
+  .screen.on{display:block}
+  .top{position:sticky;top:0;z-index:20;background:rgba(16,16,16,.93);backdrop-filter:blur(8px);
+       margin:-24px -16px 18px;padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+  .meta{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:8px;gap:10px}
+  .track{height:4px;background:var(--surface2);border-radius:999px;overflow:hidden}
+  .fill{height:100%;background:var(--accent);width:0;transition:width .2s}
+  .qnum{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .q{font-size:clamp(1.1rem,3.6vw,1.4rem);font-weight:500;margin:8px 0 20px;line-height:1.35}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+       background:var(--surface);border:1px solid var(--line);border-radius:12px;
+       color:var(--ink);font-family:inherit;font-size:.98rem;padding:14px 16px;cursor:pointer;transition:.12s}
+  .opt:hover{border-color:#4A4A4A}
+  .opt[aria-pressed="true"]{border-color:var(--accent);background:#1B1718}
+  .opt .k{flex:0 0 26px;height:26px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);
+       display:grid;place-items:center;font-size:.76rem;font-weight:700;color:var(--muted)}
+  .opt[aria-pressed="true"] .k{background:var(--accent);border-color:var(--accent);color:#0C0C0C}
+  .nav{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .verdict{border-left:3px solid var(--accent);padding-left:18px;margin:18px 0 26px}
+  .score{display:flex;align-items:baseline;gap:10px;margin:16px 0 6px}
+  .score .n{font-size:clamp(2.6rem,11vw,4rem);font-weight:700;line-height:1;letter-spacing:-.03em;
+       font-variant-numeric:tabular-nums}
+  .score .d{color:var(--muted)}
+  .bars{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+  .brow{display:grid;grid-template-columns:1fr;gap:6px;background:var(--surface);border:1px solid var(--line);
+       border-radius:12px;padding:13px 15px}
+  .brow.hot{border-color:var(--accent);background:#1B1718}
+  .brow .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .brow .nm{font-weight:700}
+  .brow .vl{font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted)}
+  .brow.hot .vl{color:var(--accent)}
+  .brow .g{height:6px;background:var(--surface2);border-radius:999px;overflow:hidden}
+  .brow .g i{display:block;height:100%;background:#4A4A4A}
+  .brow.hot .g i{background:var(--accent)}
+  .brow .cm{font-size:.86rem;color:var(--muted)}
+  .det{border-top:1px solid var(--line);padding:13px 0;display:grid;
+       grid-template-columns:34px 1fr;gap:12px;align-items:start}
+  .det .ix{font-size:.78rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+  .det .tx{min-width:0}
+  .det .tx b{display:block;font-weight:500;margin-bottom:4px}
+  .det .tx span{color:var(--muted);font-size:.88rem}
+  .det.ko .ix{color:var(--accent)}
+  .tag{display:inline-block;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+       padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+  .tag.a{border-color:var(--accent);color:var(--accent)}
+  .tag.o{border-color:var(--ok);color:var(--ok)}
+  .chk{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+  .chk input{appearance:none;flex:0 0 20px;height:20px;margin-top:2px;border:1px solid var(--line);
+       border-radius:5px;background:var(--surface2);cursor:pointer}
+  .chk input:checked{background:var(--accent);border-color:var(--accent)}
+  .chk span{font-size:.94rem}
+  .note{margin-top:26px;color:var(--muted);font-size:.88rem;border-top:1px solid var(--line);padding-top:16px}
+  table.t{width:100%;border-collapse:collapse;font-size:.92rem}
+  table.t th,table.t td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+  table.t th{background:var(--surface2);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  input.f,select.f,textarea.f{font-family:inherit;font-size:.95rem;color:var(--ink);background:var(--surface2);
+       border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%}
+  input.f:focus,select.f:focus,textarea.f:focus{outline:0;border-color:var(--accent)}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:.78rem;
+       display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  @media print{ body{background:#fff;color:#000} .btn,.top{display:none} }
+
+  .it{border-top:1px solid var(--line);padding:14px 0;display:grid;grid-template-columns:30px 1fr;gap:10px}
+  .it .n{font-size:.78rem;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:3px}
+  .it .b{min-width:0}
+  .it p{margin:0 0 10px;font-size:.98rem}
+  .it .vf{display:flex;gap:8px;flex-wrap:wrap}
+  .vf button{appearance:none;font-family:inherit;font-size:.86rem;padding:9px 16px;border-radius:999px;
+       border:1px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer}
+  .vf button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#0C0C0C;font-weight:700}
+  .it.vide .n{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="s-intro" class="screen on">
+    <span class="brand">23 MindSet</span>
+    <h1>Autodiagnostic d'assertivité</h1>
+    <p class="lede">Soixante affirmations. Pour chacune, répondez spontanément : plutôt vrai ou plutôt faux.</p>
+    <div class="card" style="margin-top:26px">
+      <p><b>Plutôt vrai</b> : si vous pensez ou agissez de cette façon la plupart du temps.</p>
+      <p><b>Plutôt faux</b> : si vous ne faites ou ne pensez que rarement ce qui est écrit.</p>
+      <p style="color:var(--accent);font-weight:700;margin-top:14px">Ne trichez pas avec vous-même. Cet exercice engage la suite de l'entraînement.</p>
+      <p style="color:var(--muted)">Comptez dix minutes. Rien n'est envoyé nulle part.</p>
+      <p style="margin-top:20px"><button class="btn" id="go">Commencer</button></p>
+    </div>
+    <footer><span>D'après le livret d'exercices Excellens Formation - mise en forme numérique 23 MindSet - Fares ATBA</span><span>Autodiagnostic d'assertivité</span></footer>
+  </section>
+
+  <section id="s-q" class="screen">
+    <div class="top">
+      <div class="meta"><span id="cnt"></span><span id="rest"></span></div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+    </div>
+    <div id="items"></div>
+    <div class="nav">
+      <button class="btn" id="voir" disabled>Voir ma correction</button>
+      <button class="btn ghost" id="manque" style="display:none">Aller à la première sans réponse</button>
+    </div>
+    <p class="note" id="hint">Le bouton s'active quand les soixante affirmations ont une réponse.</p>
+  </section>
+
+  <section id="s-res" class="screen">
+    <span class="brand">Votre résultat</span>
+    <h1 id="dom"></h1>
+    <p class="lede" id="domp"></p>
+    <div class="bars" id="bars"></div>
+    <h2>Ce que vous pouvez travailler</h2>
+    <div id="act"></div>
+    <h2>Le détail de vos réponses</h2>
+    <p class="lede" style="margin-bottom:10px">Seules les réponses « plutôt vrai » comptent un point. Elles apparaissent en premier, classées par attitude.</p>
+    <div id="detail"></div>
+    <p class="note">Il n'y a pas de bon ou de mauvais profil. Les quatre attitudes existent chez tout le monde : le diagnostic dit seulement laquelle vous vient en premier, sous pression.</p>
+    <p style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn ghost" id="again">Recommencer</button>
+      <button class="btn ghost" id="print">Imprimer ou enregistrer en PDF</button>
+    </p>
+    <footer><span>D'après le livret d'exercices Excellens Formation - mise en forme numérique 23 MindSet - Fares ATBA</span><span>Vos réponses restent sur votre appareil.</span></footer>
+  </section>
+
+</div>
+<script>
+
+(function(){
+  "use strict";
+  var I = ["Je dis souvent oui, alors que je voudrais dire non.", "Je défends mes droits, sans empiéter sur ceux des autres.", "Je préfère dissimuler ce que je pense ou ressens, si je ne connais pas bien la personne.", "Je suis plutôt autoritaire et décidé.", "Il est en général plus facile et habile d'agir par personne interposée que directement.", "Je ne crains pas de critiquer et de dire aux gens ce que je pense.", "Je n'ose pas refuser certaines tâches qui manifestement ne relèvent pas de mes attributions.", "Je ne crains pas de donner mon opinion, même en face d'interlocuteurs hostiles.", "Quand il y a un débat, je préfère me tenir en retrait pour voir comment cela va tourner.", "On me reproche parfois d'avoir l'esprit de contradiction.", "J'ai du mal à écouter les autres.", "Je m'arrange pour être dans les secrets des dieux : cela m'a bien rendu service.", "On me considère en général comme assez malin et habile dans les relations.", "J'entretiens avec les autres des rapports fondés sur la confiance plutôt que sur la domination ou le calcul.", "Je préfère ne pas demander de l'aide à un collègue : il risquerait de penser que je ne suis pas compétent.", "Je suis timide et je me sens bloqué dès que je dois réaliser une action inhabituelle.", "On me dit « soupe au lait » ; je m'énerve et cela fait rire les autres.", "Je suis à l'aise dans les contacts en face à face.", "Je joue assez souvent la comédie : comment faire autrement pour arriver à ses fins ?", "Je suis bavard et je coupe la parole aux autres sans m'en rendre compte à temps.", "J'ai de l'ambition et je suis prêt à faire ce qu'il faut pour arriver.", "Je sais en général qui il faut voir et quand il faut le voir : c'est important pour réussir.", "En cas de désaccord, je recherche les compromis réalistes sur la base des intérêts mutuels.", "Je préfère jouer cartes sur table.", "J'ai tendance à remettre à plus tard ce que je dois faire.", "Je laisse souvent un travail en train sans le terminer.", "En général, je me présente tel que je suis, sans dissimuler mes sentiments.", "Il en faut beaucoup pour m'intimider.", "Faire peur aux autres est souvent un bon moyen de prendre du pouvoir.", "Quand je me suis fait avoir une fois, je sais prendre ma revanche à l'occasion.", "Pour critiquer quelqu'un, il est efficace de lui reprocher de ne pas suivre ses propres principes. Il est forcément d'accord.", "Je sais tirer parti du système : je suis débrouillard.", "Je suis capable d'être moi-même, tout en continuant d'être accepté socialement.", "Quand je ne suis pas d'accord, j'ose le dire sans passion et je me fais entendre.", "J'ai le souci de ne pas importuner les autres.", "J'ai du mal à prendre parti et à choisir.", "Je n'aime pas être la seule personne de mon avis dans un groupe : dans ce cas, je préfère me taire.", "Je n'ai pas peur de parler en public.", "La vie n'est que rapports de forces et lutte.", "Je n'ai pas peur de relever des défis dangereux et risqués.", "Créer des conflits peut être plus efficace que réduire les tensions.", "Jouer la franchise est un bon moyen pour mettre en confiance.", "Je sais écouter et je ne coupe pas la parole.", "Je mène jusqu'au bout ce que j'ai décidé de faire.", "Je n'ai pas peur d'exprimer mes sentiments tels que je les ressens.", "Je sais bien faire adhérer les gens et les amener à mes idées.", "Flatter tout un chacun reste encore un bon moyen d'obtenir ce que l'on veut.", "J'ai du mal à maîtriser mon temps de parole.", "Je sais manier l'ironie mordante.", "Je suis serviable et facile à vivre ; parfois même je me fais un peu exploiter.", "J'aime mieux observer que participer.", "Je préfère être dans la coulisse qu'au premier rang.", "Je ne pense pas que la manipulation soit une solution efficace.", "Il ne faut pas annoncer trop vite ses intentions, c'est maladroit.", "Je choque souvent les gens par mes propos.", "Je préfère être loup plutôt qu'agneau.", "Manipuler les autres souvent est le seul moyen pratique pour obtenir ce que l'on veut.", "Je sais en général protester avec efficacité, sans agressivité excessive.", "Je trouve que les problèmes ne peuvent être vraiment résolus sans en chercher les causes profondes.", "Je n'aime pas me faire mal voir."], GRILLE = {"F": [1, 7, 15, 16, 17, 25, 26, 35, 36, 37, 50, 51, 52, 59, 60], "A": [4, 6, 10, 11, 20, 21, 28, 29, 30, 39, 40, 48, 49, 55, 56], "M": [3, 5, 9, 12, 13, 19, 22, 31, 32, 41, 42, 46, 47, 54, 57], "S": [2, 8, 14, 18, 23, 24, 27, 33, 34, 38, 43, 44, 45, 53, 58]}, ATT = [["F", "Attitude de fuite passive", "On évite le rapport de force en s'effaçant : ne pas déranger, ne pas refuser, ne pas prendre parti. Le coût se paie plus tard, en travail accepté à contrecœur et en frustration accumulée.", "Commencez par une seule phrase : « je ne pourrai pas, voilà pourquoi », sans excuse ajoutée."], ["A", "Attitude d'attaque agressive", "On occupe le terrain : on tranche, on coupe la parole, on impose. Ça avance vite sur le moment, et ça coûte en coopération et en information qui ne remonte plus.", "Avant de répondre, laissez passer trois secondes et reformulez ce que l'autre vient de dire."], ["M", "Attitude de manipulation", "On obtient par le détour : l'information gardée, le réseau, le compliment utile, l'intention annoncée à moitié. Efficace à court terme, coûteux en confiance.", "Sur un sujet, dites votre objectif en clair dès le début de l'échange."], ["S", "Attitude assertive", "On dit ce que l'on pense, on écoute, on négocie sur les intérêts mutuels. Ni soumission, ni domination, ni calcul.", "Repérez la situation où vous êtes déjà assertif, et servez-vous-en comme modèle ailleurs."]];
+  var rep = new Array(I.length).fill(null);
+  function $(id){ return document.getElementById(id); }
+  function show(id){
+    ["s-intro","s-q","s-res"].forEach(function(s){ $(s).classList.toggle("on", s===id); });
+    window.scrollTo(0,0);
+  }
+  function attDe(n){
+    var k = Object.keys(GRILLE).filter(function(c){ return GRILLE[c].indexOf(n)!==-1; })[0];
+    return ATT.filter(function(a){ return a[0]===k; })[0];
+  }
+  function maj(){
+    var done = rep.filter(function(r){ return r!==null; }).length;
+    $("cnt").textContent = done + " r\u00e9ponse" + (done>1?"s":"") + " sur " + I.length;
+    $("rest").textContent = (I.length-done===0) ? "complet" : (I.length-done) + " \u00e0 remplir";
+    $("fill").style.width = Math.round((done/I.length)*100) + "%";
+    $("voir").disabled = (done < I.length);
+    $("manque").style.display = (done < I.length && done > 0) ? "" : "none";
+    $("hint").style.display = (done < I.length) ? "" : "none";
+  }
+  function build(){
+    var box = $("items"); box.innerHTML = "";
+    I.forEach(function(txt, k){
+      var d = document.createElement("div"); d.className="it vide"; d.id = "it"+k;
+      var n = document.createElement("span"); n.className="n"; n.textContent = (k+1);
+      var b = document.createElement("div"); b.className="b";
+      var p = document.createElement("p"); p.textContent = txt;
+      var vf = document.createElement("div"); vf.className="vf";
+      ["Plut\u00f4t vrai","Plut\u00f4t faux"].forEach(function(lb, j){
+        var bt = document.createElement("button"); bt.type="button"; bt.textContent = lb;
+        bt.setAttribute("aria-pressed", "false");
+        bt.addEventListener("click", function(){
+          rep[k] = (j===0);
+          vf.querySelectorAll("button").forEach(function(x,xi){
+            x.setAttribute("aria-pressed", xi===j ? "true":"false");
+          });
+          d.classList.remove("vide");
+          maj();
+        });
+        vf.appendChild(bt);
+      });
+      b.appendChild(p); b.appendChild(vf);
+      d.appendChild(n); d.appendChild(b); box.appendChild(d);
+    });
+    maj();
+  }
+  function resultat(){
+    var tot = {};
+    Object.keys(GRILLE).forEach(function(c){
+      tot[c] = GRILLE[c].filter(function(n){ return rep[n-1]===true; }).length;
+    });
+    var ord = ATT.slice().sort(function(a,b){ return tot[b[0]] - tot[a[0]]; });
+    var top = ord[0], ex = (tot[ord[0][0]] === tot[ord[1][0]]);
+    $("dom").textContent = ex ? "Deux attitudes \u00e0 \u00e9galit\u00e9" : top[1];
+    $("domp").textContent = ex
+      ? ("Vous obtenez le m\u00eame score sur " + ord[0][1].toLowerCase() + " et sur "
+         + ord[1][1].toLowerCase() + ". Regardez le d\u00e9tail : ce sont souvent deux attitudes qui alternent selon l'interlocuteur.")
+      : top[2];
+    var bars = $("bars"); bars.innerHTML = "";
+    ord.forEach(function(a){
+      var v = tot[a[0]], hot = (a === top && !ex);
+      var row = document.createElement("div"); row.className = "brow" + (hot?" hot":"");
+      var hd = document.createElement("div"); hd.className="hd";
+      var nm = document.createElement("span"); nm.className="nm"; nm.textContent = a[1];
+      var vl = document.createElement("span"); vl.className="vl"; vl.textContent = v + " / 15";
+      hd.appendChild(nm); hd.appendChild(vl);
+      var g = document.createElement("div"); g.className="g";
+      var it = document.createElement("i"); it.style.width = Math.round((v/15)*100) + "%";
+      g.appendChild(it);
+      var cm = document.createElement("div"); cm.className="cm"; cm.textContent = a[2];
+      row.appendChild(hd); row.appendChild(g); row.appendChild(cm);
+      bars.appendChild(row);
+    });
+    var act = $("act"); act.innerHTML = "";
+    ord.filter(function(a){ return a[0] !== "S"; }).slice(0,2).forEach(function(a){
+      var p = document.createElement("div"); p.className="det";
+      var ix = document.createElement("span"); ix.className="ix"; ix.textContent = tot[a[0]];
+      var tx = document.createElement("span"); tx.className="tx";
+      var b = document.createElement("b"); b.textContent = a[1];
+      var s = document.createElement("span"); s.textContent = a[3];
+      tx.appendChild(b); tx.appendChild(s);
+      p.appendChild(ix); p.appendChild(tx); act.appendChild(p);
+    });
+    var det = $("detail"); det.innerHTML = "";
+    var idx = I.map(function(_,k){ return k; });
+    var rank = {}; ord.forEach(function(a,j){ rank[a[0]] = j; });
+    idx.sort(function(a,b){
+      var va = rep[a]===true ? 0 : 1, vb = rep[b]===true ? 0 : 1;
+      if(va!==vb) return va-vb;
+      var ra = rank[attDe(a+1)[0]], rb = rank[attDe(b+1)[0]];
+      if(ra!==rb) return ra-rb;
+      return a-b;
+    });
+    idx.forEach(function(k){
+      var vrai = (rep[k]===true), a = attDe(k+1);
+      var d = document.createElement("div"); d.className = "det" + (vrai ? " ko":"");
+      var ix = document.createElement("span"); ix.className="ix"; ix.textContent = (k+1);
+      var tx = document.createElement("span"); tx.className="tx";
+      var b = document.createElement("b"); b.textContent = I[k];
+      var s = document.createElement("span");
+      var t = document.createElement("span"); t.className = "tag" + (vrai ? " a":"");
+      t.textContent = vrai ? "1 point" : "0 point";
+      s.appendChild(t);
+      s.appendChild(document.createTextNode(
+        (vrai ? "Plut\u00f4t vrai" : "Plut\u00f4t faux") + " \u00b7 " + a[1].toLowerCase()));
+      tx.appendChild(b); tx.appendChild(s);
+      d.appendChild(ix); d.appendChild(tx); det.appendChild(d);
+    });
+    show("s-res");
+  }
+  $("go").addEventListener("click", function(){ rep.fill(null); build(); show("s-q"); });
+  $("again").addEventListener("click", function(){ rep.fill(null); build(); show("s-q"); });
+  $("voir").addEventListener("click", function(){ if(rep.indexOf(null)===-1){ resultat(); } });
+  $("manque").addEventListener("click", function(){
+    var k = rep.indexOf(null);
+    if(k!==-1){ document.getElementById("it"+k).scrollIntoView({block:"center"}); }
+  });
+  $("print").addEventListener("click", function(){ window.print(); });
+})();
+
+</script>
+</body>
+</html>
